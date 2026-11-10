@@ -7,3 +7,6 @@ dist/
 *.zip
 *.log
 .DS_Store
+
+Windows-build/
+Mac-build/

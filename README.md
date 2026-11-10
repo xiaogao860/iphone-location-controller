@@ -84,3 +84,7 @@ py -3.11 -m venv .venv
 `iphone_location/app.py` Qt 界面与进程管理；`motion.py` 纯运动计算；`backend.py` 手机连接和恢复；`coordinates.py` 坐标导入；`assets/` 地图；`tests/` 自动检查。
 
 本项目按 GPL-3.0 发布，与使用的 GPL-3.0 pymobiledevice3 保持一致。Leaflet 为 BSD-2-Clause；PySide6/Qt 及其第三方组件保留各自许可。仓库不包含 Apple 驱动、手机配对记录、开发镜像或旧版 Mac 二进制。
+
+## macOS 原生版
+
+Mac 版也已加入本仓库，见 [macos/README.md](macos/README.md)。它保留原 Swift / AppKit / MapKit 实现，版本 1.4，面向 Apple Silicon，依赖系统 Apple Python / Command Line Tools。现有 v2.0.0 Release 附加 Mac 应用 ZIP 与独立源码 ZIP；Windows 与 Mac 的版本号、地图实现和验证范围分别标明。
