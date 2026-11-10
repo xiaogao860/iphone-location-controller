@@ -1,0 +1,46 @@
+name: Publish Windows release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release tag
+        required: true
+        default: v2.0.0
+      build_run:
+        description: Successful Windows build run ID
+        required: true
+        default: '42753302668'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version }}
+      BUILD_RUN: ${{ inputs.build_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify successful source build
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$BUILD_RUN" =~ ^[0-9]+$ ]]
+          RESULT=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN" --jq .conclusion)
+          test "$RESULT" = success
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN" --jq .head_sha)
+          echo "BUILD_SHA=$SHA" >> "$GITHUB_ENV"
+      - name: Download verified Windows artifact
+        run: gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name iPhoneLocationController-windows-x64 --dir release-assets
+      - name: Publish complete release
+        run: |
+          set -euo pipefail
+          cd release-assets
+          sha256sum iPhoneLocationController-windows-x64.zip > SHA256SUMS.txt
+          if ! gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$VERSION" --repo "$GITHUB_REPOSITORY" --target "$BUILD_SHA" --title "$VERSION — Windows 定位控制器" --notes-file "../.github/release-notes/$VERSION.md" --draft
+          fi
+          gh release upload "$VERSION" iPhoneLocationController-windows-x64.zip --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$VERSION" SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber
+          gh release edit "$VERSION" --repo "$GITHUB_REPOSITORY" --draft=false --latest
