@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_all
 datas=[('iphone_location/assets','iphone_location/assets')]
 binaries=[]
 hiddenimports=[]
-for package in ['pymobiledevice3','pmd_pytcp','pmd_net_addr','pmd_net_proto','developer_disk_image']:
+for package in ['pymobiledevice3','pmd_pytcp','pmd_net_addr','pmd_net_proto','developer_disk_image','pytun_pmd3']:
     d,b,h=collect_all(package)
     datas+=d;binaries+=b;hiddenimports+=h
 # Keep the console subsystem so worker stdin/stdout remain available in frozen builds.
