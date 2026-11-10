@@ -1,10 +1,10 @@
-# macOS 原生版（1.4）
+# macOS 原生版（1.4.1）
 
 这是先前的 Swift / AppKit / MapKit 原生 Mac 版本，独立于仓库根目录的 Windows / Qt 版本。
 
 ## 下载与运行
 
-在最新 Release（v2.1.0）中下载 `iPhoneLocationController-macos-arm64.zip`，解压后打开其中的「定位控制器.app」。这是原 Mac 1.4 应用包，不是 Windows 2.x 的 Mac 移植，也不是 Intel/Universal 应用。
+在最新 Release（v2.1.0）中下载 `iPhoneLocationController-macos-arm64.zip`，解压后打开其中的「定位控制器.app」。这是 Mac 原生版 1.4.1 应用包，不是 Windows 2.x 的 Mac 移植，也不是 Intel/Universal 应用。
 
 - 架构：Apple Silicon / arm64。
 - 原验证环境：macOS 26.6 + iOS 26.5.1；其他版本未逐一测试。
@@ -14,7 +14,7 @@
 
 WASD、速度参数、地图选点、手绘路线、一键生成跑道、暂停/继续、循环、恢复真实定位功能均保留。具体操作见本目录的《原版使用说明》。
 
-Mac MapKit 中国底图与 Windows 的地图实现不同：Mac 版保留「中国地图坐标校正（GCJ-02 → GPS）」开关。此前已验证转换计算和发送，但最终手机地图对齐尚未收到确认。默认操场中心是近似地图选点，可微调。
+Mac MapKit 中国底图与 Windows 的地图实现不同：Mac 版保留「中国地图坐标校正（GCJ-02 → GPS）」开关。此前已验证转换计算和发送，但最终手机地图对齐尚未收到确认。默认位置为天安门广场，可地图选点或输入坐标更改。
 
 ## 从源码构建
 
@@ -26,7 +26,7 @@ bash macos/build.sh
 
 脚本用本机 `/usr/bin/python3` 创建独立环境并安装 `pymobiledevice3==11.27.2`，编译 Swift 界面、复制运行依赖并作临时签名；输出到 `dist/macos/定位控制器.app`。这不修改 /Applications 内已有应用，也不会自动连接手机或改变定位。依赖安装与首次开发支持组件准备需要网络。
 
-`Sources/` 包含 Swift 界面、路线/跑道计算和 Python 定位后端。可分别编译检查界面、验证 Python 依赖；发布应用包的来源是现有 `/Applications/定位控制器.app`（1.4），其后端脚本已与提交源码比对一致，签名检查通过。
+`Sources/` 包含 Swift 界面、路线/跑道计算和 Python 定位后端。可分别编译检查界面、验证 Python 依赖；v2.1.0 起发布的应用包由 `macos/build.sh` 从当前源码构建。
 
 ## 发布说明
 

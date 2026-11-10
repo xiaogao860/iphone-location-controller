@@ -33,6 +33,6 @@ def test_bad_coordinate_clears_simulation():
 
 def test_eof_clears_and_gcj_import_is_explicit():
     log=[]
-    run(['{"action":"set","lat":40.158649,"lon":116.286210,"coordinateSystem":"gcj02"}'],log)
-    assert log[0][1:]==pytest.approx((40.1574011978,116.2801353860),abs=1e-8)
+    run(['{"action":"set","lat":39.904123,"lon":116.397682,"coordinateSystem":"gcj02"}'],log)
+    assert log[0][1:]==pytest.approx((39.9027218666,116.3914413539),abs=1e-8)
     assert log[-1]==('clear',)

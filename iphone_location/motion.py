@@ -3,8 +3,8 @@ import math
 from dataclasses import dataclass
 
 R = 6371008.8
-# Approximate WGS-84 center converted from the former macOS GCJ-02 map point.
-DEFAULT_CENTER = (40.1574011978, 116.2801353860)
+# Default map / start / track center: Tiananmen Square (WGS-84). Change it with search, map click or coordinates.
+DEFAULT_CENTER = (39.9027218666, 116.3914413539)
 
 def validate(point):
     lat, lon = map(float, point)

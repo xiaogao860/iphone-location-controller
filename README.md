@@ -37,7 +37,7 @@ Windows 桌面版 iPhone 定位模拟控制器，使用 Python、PySide6 / Qt We
 2. 点击“连接手机”，等待就绪。单独连接不会修改定位。
 3. 手动模式：选择起点或输入 GPS 坐标，点击“应用输入坐标”，再开始 WASD。输入框编辑时不会响应移动键。
 4. 手绘模式：选择“绘制路线”，在地图依次点击，设置速度后“开始路线跑步”。路径按点间直线连接，不自动沿路规划。
-5. 跑道：点击地图选择中心，设置周长和朝向，一键生成后开始路线跑步。默认周长 400 米；0° 长轴朝北，正角度顺时针。默认 -15° 可自行调整。
+5. 跑道：点击地图选择中心，设置周长和朝向，一键生成后开始路线跑步。默认周长 400 米、朝向 0°；0° 长轴朝北，正角度顺时针。
 6. “循环路线”会从终点回到首点；手绘路线需自行闭合，避免最后跳回起点。
 7. 用完点击“恢复真实定位 / 断开”，再在手机地图点击当前位置确认。
 
@@ -47,7 +47,7 @@ Windows 桌面版 iPhone 定位模拟控制器，使用 Python、PySide6 / Qt We
 
 Windows 版使用本地打包的 Leaflet 1.9.4，远程瓦片为 Esri World Imagery 与 OpenStreetMap。地图/路线/手机注入统一 WGS-84，不再沿用 macOS MapKit 中国底图的隐式坐标模式。瓦片服务是否可访问取决于网络；地图加载失败时可以输入坐标操作。
 
-默认中心为北邮沙河校区操场附近 `40.1574011978, 116.2801353860`（WGS-84），由旧版地图点近似转换而来。**原对话尚未确认修正后手机上的最终对齐，此点不是实测测绘值，可自行微调。** GCJ-02→WGS-84 是本地近似算法，入口仅用于显式导入。不要对本应用地图点击结果再做转换。
+默认中心为天安门广场 `39.9027218666, 116.3914413539`（WGS-84），可用地名搜索、地图选点或输入坐标更改。GCJ-02→WGS-84 是本地近似算法，入口仅用于显式导入。不要对本应用地图点击结果再做转换。
 
 地图服务会接收用于加载瓦片的区域信息，地名搜索会把输入的地名发给 OpenStreetMap Nominatim；本项目不设置账号系统、分析服务或应用遥测。归属信息保留在地图上；本地第三方库许可见 `iphone_location/assets/LEAFLET-LICENSE`。
 
@@ -88,4 +88,4 @@ py -3.11 -m venv .venv
 
 ## macOS 原生版
 
-Mac 版也已加入本仓库，见 [macos/README.md](macos/README.md)。它保留原 Swift / AppKit / MapKit 实现，版本 1.4，面向 Apple Silicon，依赖系统 Apple Python / Command Line Tools。最新 Release（v2.1.0）同时附带 Mac 应用 ZIP 与独立源码 ZIP；Windows 与 Mac 的版本号、地图实现和验证范围分别标明。
+Mac 版也已加入本仓库，见 [macos/README.md](macos/README.md)。它保留原 Swift / AppKit / MapKit 实现，版本 1.4.1，面向 Apple Silicon，依赖系统 Apple Python / Command Line Tools。最新 Release（v2.1.0）同时附带 Mac 应用 ZIP 与独立源码 ZIP；Windows 与 Mac 的版本号、地图实现和验证范围分别标明。

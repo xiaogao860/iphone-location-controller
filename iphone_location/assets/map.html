@@ -1,12 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="leaflet.css"><style>html,body,#map{height:100%;margin:0;background:#182230}.leaflet-container{background:#182230}#notice{position:absolute;z-index:999;top:10px;left:55px;background:#fff;color:#222;padding:5px 9px;border-radius:4px;font:13px sans-serif}</style></head><body><div id="map"></div><div id="notice">WGS-84 · 地图加载中</div><script src="leaflet.js"></script><script src="qrc:///qtwebchannel/qwebchannel.js"></script><script>
-const map=L.map('map',{doubleClickZoom:false}).setView([40.1574011978,116.2801353860],17);
+const map=L.map('map',{doubleClickZoom:false}).setView([39.9027218666, 116.3914413539],17);
 const street=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
 const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri, Maxar, Earthstar Geographics and contributors'}).addTo(map);
 L.control.layers({'卫星图（WGS-84）':satellite,'街道图（WGS-84）':street}).addTo(map);
 for(const tiles of [street,satellite]){tiles.on('tileerror',()=>document.getElementById('notice').textContent='地图瓦片未加载，请检查网络或切换图层');tiles.on('tileload',()=>document.getElementById('notice').textContent='WGS-84 · 点击选点');}
 let bridge=null,route=L.polyline([],{color:'#31a5ff',weight:4}).addTo(map);
-const center=L.circleMarker([40.1574011978,116.2801353860],{radius:5,color:'#ffb547'}).addTo(map);
-const marker=L.circleMarker([40.1574011978,116.2801353860],{radius:7,color:'#f36b7f'}).addTo(map);
+const center=L.circleMarker([39.9027218666, 116.3914413539],{radius:5,color:'#ffb547'}).addTo(map);
+const marker=L.circleMarker([39.9027218666, 116.3914413539],{radius:7,color:'#f36b7f'}).addTo(map);
 new QWebChannel(qt.webChannelTransport,channel=>{bridge=channel.objects.bridge;bridge.ready();});
 map.on('click',e=>{if(bridge)bridge.select(e.latlng.lat,e.latlng.lng);});
 window.setPosition=p=>marker.setLatLng(p);

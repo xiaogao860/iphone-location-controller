@@ -40,9 +40,9 @@ def test_duplicate_segments_and_dateline():
     assert abs(abs(r.advance(r.total/2)[1])-180)<1e-6
 
 def test_coordinate_import_only_once():
-    converted=gcj02_to_wgs84(40.158649,116.286210)
+    converted=gcj02_to_wgs84(39.904123,116.397682)
     assert converted==pytest.approx(DEFAULT_CENTER,abs=1e-9)
-    assert wgs84_to_gcj02(*converted)==pytest.approx((40.158649,116.286210),abs=1e-8)
+    assert wgs84_to_gcj02(*converted)==pytest.approx((39.904123,116.397682),abs=1e-8)
     assert gcj02_to_wgs84(48.85,2.35)==(48.85,2.35)
 
 def test_unlimited_speed_and_zero_speed():
