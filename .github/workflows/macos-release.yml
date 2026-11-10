@@ -20,6 +20,7 @@ jobs:
         run: |
           set -euo pipefail
           cd mac-assets
+          cat iPhoneLocationController-macos-arm64.zip.part* > iPhoneLocationController-macos-arm64.zip
           sha256sum -c SHA256SUMS-macos.txt
           gh release upload v2.0.0 iPhoneLocationController-macos-arm64.zip --repo "$GITHUB_REPOSITORY" --clobber
           gh release upload v2.0.0 iPhoneLocationController-macos-source.zip --repo "$GITHUB_REPOSITORY" --clobber
