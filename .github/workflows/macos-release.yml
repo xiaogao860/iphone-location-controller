@@ -1,0 +1,37 @@
+name: Publish native macOS release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch locally verified native package
+        uses: actions/checkout@v4
+        with:
+          ref: release-assets/macos-1.4
+          path: mac-assets
+          persist-credentials: false
+      - name: Verify checksums and upload Mac attachments
+        run: |
+          set -euo pipefail
+          cd mac-assets
+          sha256sum -c SHA256SUMS-macos.txt
+          gh release upload v2.0.0 iPhoneLocationController-macos-arm64.zip --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload v2.0.0 iPhoneLocationController-macos-source.zip --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload v2.0.0 SHA256SUMS-macos.txt --repo "$GITHUB_REPOSITORY" --clobber
+      - name: Add Mac-specific release notes
+        run: |
+          set -euo pipefail
+          gh release view v2.0.0 --repo "$GITHUB_REPOSITORY" --json body --jq .body > /tmp/release-notes.md
+          if ! grep -q '## macOS 原生版 1.4' /tmp/release-notes.md; then
+            printf '\n\n' >> /tmp/release-notes.md
+            cat .github/release-notes/macos-addendum.md >> /tmp/release-notes.md
+            gh release edit v2.0.0 --repo "$GITHUB_REPOSITORY" --notes-file /tmp/release-notes.md
+          fi
+      - name: Remove temporary transfer branch
+        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/release-assets/macos-1.4"
