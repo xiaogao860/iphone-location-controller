@@ -1,0 +1,39 @@
+name: Windows build
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Tests
+        run: python -m pytest -q
+      - name: Build portable application
+        run: python -m PyInstaller --noconfirm --clean iPhoneLocationController.spec
+      - name: Verify bundled worker and imports
+        run: |
+          & dist/iPhoneLocationController/iPhoneLocationController.exe --self-test
+          if ($LASTEXITCODE -ne 0) { throw 'Bundled self-test failed' }
+      - name: Package
+        shell: pwsh
+        run: |
+          Copy-Item README.md dist/iPhoneLocationController/README.md
+          Copy-Item LICENSE dist/iPhoneLocationController/LICENSE
+          Compress-Archive dist/iPhoneLocationController -DestinationPath dist/iPhoneLocationController-windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iPhoneLocationController-windows-x64
+          path: dist/iPhoneLocationController-windows-x64.zip
+          retention-days: 30
