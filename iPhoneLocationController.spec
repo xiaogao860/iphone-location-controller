@@ -1,6 +1,8 @@
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_all, copy_metadata
 
 datas=[('iphone_location/assets','iphone_location/assets')]
+datas += copy_metadata('pymobiledevice3', recursive=True)
+datas += copy_metadata('PySide6', recursive=True)
 binaries=[]
 hiddenimports=[]
 for package in ['pymobiledevice3','pmd_pytcp','pmd_net_addr','pmd_net_proto','developer_disk_image','pytun_pmd3']:
