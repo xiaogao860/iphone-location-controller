@@ -8,6 +8,7 @@ Windows 桌面版 iPhone 定位模拟控制器，使用 Python、PySide6 / Qt We
 - WASD 按住移动、松开停止、斜向速度归一化。失去窗口焦点停止手动移动。
 - 速度单位 km/h，无人为上限，要求有限非负数；自动跑路线要求大于零。
 - 地图点击选择起点或跑道中心。手绘路线的第一次点击就是首点，不插入其他位置。
+- 地名搜索：输入地名回车，地图定位到结果并设为起点 / 跑道中心（OpenStreetMap Nominatim，WGS-84）。
 - 路线自动移动、暂停/继续、终点停止、循环；自动路线在窗口失焦后继续。
 - 一键生成两直道、两半圆组成的闭合跑道；可调整周长、朝向。
 - 恢复真实定位；正常关闭应用前等待后端清除模拟定位。
@@ -48,7 +49,7 @@ Windows 版使用本地打包的 Leaflet 1.9.4，远程瓦片为 Esri World Imag
 
 默认中心为北邮沙河校区操场附近 `40.1574011978, 116.2801353860`（WGS-84），由旧版地图点近似转换而来。**原对话尚未确认修正后手机上的最终对齐，此点不是实测测绘值，可自行微调。** GCJ-02→WGS-84 是本地近似算法，入口仅用于显式导入。不要对本应用地图点击结果再做转换。
 
-地图服务会接收用于加载瓦片的区域信息；本项目不设置账号系统、分析服务或应用遥测。归属信息保留在地图上；本地第三方库许可见 `iphone_location/assets/LEAFLET-LICENSE`。
+地图服务会接收用于加载瓦片的区域信息，地名搜索会把输入的地名发给 OpenStreetMap Nominatim；本项目不设置账号系统、分析服务或应用遥测。归属信息保留在地图上；本地第三方库许可见 `iphone_location/assets/LEAFLET-LICENSE`。
 
 ## 从源码启动 / 构建
 
@@ -87,4 +88,4 @@ py -3.11 -m venv .venv
 
 ## macOS 原生版
 
-Mac 版也已加入本仓库，见 [macos/README.md](macos/README.md)。它保留原 Swift / AppKit / MapKit 实现，版本 1.4，面向 Apple Silicon，依赖系统 Apple Python / Command Line Tools。现有 v2.0.0 Release 附加 Mac 应用 ZIP 与独立源码 ZIP；Windows 与 Mac 的版本号、地图实现和验证范围分别标明。
+Mac 版也已加入本仓库，见 [macos/README.md](macos/README.md)。它保留原 Swift / AppKit / MapKit 实现，版本 1.4，面向 Apple Silicon，依赖系统 Apple Python / Command Line Tools。最新 Release（v2.1.0）同时附带 Mac 应用 ZIP 与独立源码 ZIP；Windows 与 Mac 的版本号、地图实现和验证范围分别标明。

@@ -4,7 +4,7 @@
 
 ## 下载与运行
 
-在 v2.0.0 Release 中下载 `iPhoneLocationController-macos-arm64.zip`，解压后打开其中的「定位控制器.app」。这是原 Mac 1.4 应用包，不是 Windows 2.0 的 Mac 移植，也不是 Intel/Universal 应用。
+在最新 Release（v2.1.0）中下载 `iPhoneLocationController-macos-arm64.zip`，解压后打开其中的「定位控制器.app」。这是原 Mac 1.4 应用包，不是 Windows 2.x 的 Mac 移植，也不是 Intel/Universal 应用。
 
 - 架构：Apple Silicon / arm64。
 - 原验证环境：macOS 26.6 + iOS 26.5.1；其他版本未逐一测试。
