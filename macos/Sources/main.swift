@@ -6,9 +6,9 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, MKMapViewDel
     var process: Process?, input: FileHandle?
     var buffer = "", keys = Set<UInt16>()
     var ready = false, moving = false, pending = false, quitting = false
-    var lat = 40.158649, lon = 116.286210
+    var lat = 39.904123, lon = 116.397682
     var last = Date(), lastSend = Date.distantPast
-    let latField = NSTextField(string: "40.158649"), lonField = NSTextField(string: "116.286210")
+    let latField = NSTextField(string: "39.904123"), lonField = NSTextField(string: "116.397682")
     let speed = NSTextField(string: "5.0")
     let status = NSTextField(wrappingLabelWithString: "请用 USB 连接并解锁 iPhone，开启开发者模式。")
     let position = NSTextField(wrappingLabelWithString: "尚未发送模拟位置")
@@ -18,7 +18,7 @@ final class App: NSObject, NSApplicationDelegate, NSWindowDelegate, MKMapViewDel
     var timer: Timer?
     let map = MKMapView()
     let pin = MKPointAnnotation()
-    let locationSource=NSTextField(labelWithString:"默认位置：北京邮电大学沙河校区操场中心")
+    let locationSource=NSTextField(labelWithString:"默认位置：天安门广场")
     let mapMode=NSSegmentedControl(labels:["选择起点","绘制路线"],trackingMode:.selectOne,target:nil,action:nil)
     let routeInfo=NSTextField(labelWithString:"路线：未设置")
     let routeStart=NSButton(title:"开始路线跑步",target:nil,action:nil)

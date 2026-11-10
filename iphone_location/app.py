@@ -8,7 +8,9 @@ from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QVBoxLayout,QHBo
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebEngineCore import QWebEngineSettings
 from PySide6.QtWebChannel import QWebChannel
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 from .coordinates import gcj02_to_wgs84
+from .geocode import USER_AGENT, search_url, parse as parse_place
 from .motion import DEFAULT_CENTER, Route, track, validate, manual_step
 
 class Bridge(QObject):
@@ -37,7 +39,7 @@ class ControlPad(QLabel):
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('iPhone 定位控制器 · Windows 2.0')
+        self.setWindowTitle('iPhone 定位控制器 · Windows 2.1')
         self.resize(1080,900)
         self.point=self.center=DEFAULT_CENTER
         self.route_points=[];self.engine=None;self.mode=None;self.keys=set()
@@ -63,9 +65,12 @@ class Window(QMainWindow):
         html=html.replace('<script src="qrc:///qtwebchannel/qwebchannel.js"></script>','<script>'+channel_js+'</script>')
         self.web.setHtml(html,QUrl.fromLocalFile(str(assets.resolve())+'/'))
         row=self.row(root);self.map_mode=QComboBox();self.map_mode.addItems(['选择起点 / 跑道中心','绘制路线（第一次点击即首点）']);row.addWidget(self.map_mode)
-        self.button(row,'返回默认操场',self.home);self.button(row,'撤销末点',self.undo);self.button(row,'清空路线',self.clear_route)
-        self.info=QLabel('默认：北邮沙河操场中心附近 · 所有地图和发送坐标统一为 WGS-84');root.addWidget(self.info)
-        row=self.row(root);self.length=QLineEdit('400');self.angle=QLineEdit('-15')
+        self.button(row,'返回默认位置',self.home);self.button(row,'撤销末点',self.undo);self.button(row,'清空路线',self.clear_route)
+        row=self.row(root);self.query=QLineEdit();self.query.setPlaceholderText('搜索地名，回车定位到起点 / 跑道中心');self.query.returnPressed.connect(self.search)
+        row.addWidget(self.query,1);self.search_button=self.button(row,'搜索',self.search)
+        self.net=QNetworkAccessManager(self);self.reply=None
+        self.info=QLabel('所有地图和发送坐标统一为 WGS-84');root.addWidget(self.info)
+        row=self.row(root);self.length=QLineEdit('400');self.angle=QLineEdit('0')
         for text,field in [('跑道周长(m)',self.length),('朝向(°)',self.angle)]:row.addWidget(QLabel(text));field.setMaximumWidth(100);row.addWidget(field)
         self.button(row,'一键生成跑道',self.generate);self.loop=QCheckBox('循环路线');row.addWidget(self.loop)
         row=self.row(root);self.lat=QLineEdit(f'{self.point[0]:.8f}');self.lon=QLineEdit(f'{self.point[1]:.8f}');self.speed=QLineEdit('5')
@@ -118,6 +123,28 @@ class Window(QMainWindow):
                 self.fields();self.js('setCenter',self.point);self.js('goHome',self.point)
                 self.info.setText('已将 GCJ-02 输入转换为 GPS / WGS-84')
             except (ValueError,TypeError) as e:self.status.setText('坐标格式错误：'+str(e))
+    def search(self):
+        if not self.editable():return
+        try:url=search_url(self.query.text())
+        except ValueError as e:self.status.setText(str(e));return
+        if self.reply:old=self.reply;self.reply=None;old.abort()
+        request=QNetworkRequest(QUrl(url));request.setRawHeader(b'User-Agent',USER_AGENT.encode())
+        self.reply=reply=self.net.get(request);reply.finished.connect(lambda:self.search_done(reply))
+        self.status.setText('正在搜索…')
+    def search_done(self,reply):
+        try:
+            if reply is not self.reply:return # 已被新的搜索取代
+            self.reply=None
+            if reply.error()!=QNetworkReply.NetworkError.NoError:raise LookupError('搜索失败：'+reply.errorString())
+            lat,lon,name=parse_place(bytes(reply.readAll()))
+            self.place(lat,lon,name)
+        except (LookupError,ValueError,KeyError,TypeError) as e:self.status.setText(str(e))
+        finally:reply.deleteLater()
+    def place(self,lat,lon,name=''):
+        if not self.editable():return
+        self.center=self.point=validate((lat,lon));self.fields();self.js('setCenter',self.point);self.js('goHome',self.point)
+        self.info.setText('搜索结果：'+(name or f'{self.point[0]:.6f}, {self.point[1]:.6f}')+'（WGS-84）')
+        self.status.setText('已定位到搜索结果；可直接生成跑道或绘制路线。')
     def home(self):
         if self.editable():self.center=self.point=DEFAULT_CENTER;self.fields();self.js('setCenter',self.point);self.js('goHome',self.point)
     def update_route(self,fit=False):
@@ -150,8 +177,11 @@ class Window(QMainWindow):
         if getattr(sys,'frozen',False):args=['--backend']
         else:args=[str(Path(__file__).resolve().parent.parent/'launcher.py'),'--backend']
         self.worker.start(sys.executable,args);self.status.setText('正在连接手机…');self.buttons()
-        QTimer.singleShot(170000,self.connect_timeout)
-    def connect_timeout(self):
+        worker=self.worker
+        QTimer.singleShot(170000,lambda:self.connect_timeout(worker))
+    def connect_timeout(self,worker=None):
+        # Only the attempt that armed this timer may time out; a reconnect arms its own.
+        if worker is not None and self.worker is not worker:return
         if self.worker and not self.connected and not self.closing:self.worker_error=True;self.status.setText('连接超时。请检查 Apple 驱动、信任及开发者模式，再点击恢复 / 断开。')
     def read_output(self):
         if not self.worker:return
@@ -199,10 +229,16 @@ class Window(QMainWindow):
         if self.pending:return
         self.pending=self.send(dict(action='set',lat=self.point[0],lon=self.point[1],coordinateSystem='wgs84'))
         self.pending_since=self.last_send=time.monotonic();self.fields()
+    def ack_timeout(self):
+        # Release the wait so the user can continue or restore; pause instead of dropping route progress.
+        self.pending=False;self.keys.clear()
+        if self.mode in ('route','route_paused'):self.mode='route_paused';self.route_button.setText('继续路线')
+        elif self.mode in ('manual','manual_paused'):self.mode='manual_paused';self.manual_button.setText('继续 WASD')
+        self.status.setText('手机 12 秒未确认更新，已暂停推进。可点继续重试，或点击恢复 / 断开。')
     def tick(self):
         now=time.monotonic()
         if self.pending:
-            if now-self.pending_since>12:self.mode=None;self.status.setText('手机未确认更新，已停止推进。请点击恢复 / 断开。')
+            if now-self.pending_since>12:self.ack_timeout()
             return
         dt=min(now-self.last,1);self.last=now
         if not self.connected or self.mode not in ('manual','route'):return
