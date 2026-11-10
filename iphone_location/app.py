@@ -3,7 +3,7 @@ import math
 import sys
 import time
 from pathlib import Path
-from PySide6.QtCore import QObject, Signal, Slot, QEvent, QProcess, QTimer, QUrl, Qt
+from PySide6.QtCore import QObject, Signal, Slot, QEvent, QProcess, QTimer, QUrl, Qt, QFile, QIODevice
 from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QLineEdit,QCheckBox,QComboBox,QInputDialog)
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebEngineCore import QWebEngineSettings
@@ -19,6 +19,21 @@ class Bridge(QObject):
     @Slot()
     def ready(self): self.loaded.emit()
 
+class ControlPad(QLabel):
+    def __init__(self,keys):
+        super().__init__('WASD 控制区 · 点击开始后按住方向键，松开停下')
+        self.keys=keys
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setStyleSheet('padding:8px;border:1px solid #607080;border-radius:4px')
+    def keyPressEvent(self,event):
+        if event.key() in (Qt.Key.Key_W,Qt.Key.Key_A,Qt.Key.Key_S,Qt.Key.Key_D) and not event.modifiers() & (Qt.KeyboardModifier.ControlModifier|Qt.KeyboardModifier.AltModifier):
+            self.keys.add(event.key());event.accept()
+        else:super().keyPressEvent(event)
+    def keyReleaseEvent(self,event):
+        self.keys.discard(event.key());event.accept()
+    def focusOutEvent(self,event):
+        self.keys.clear();super().focusOutEvent(event)
+
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -32,11 +47,21 @@ class Window(QMainWindow):
         body=QWidget();root=QVBoxLayout(body);self.setCentralWidget(body)
         title=QLabel('iPhone 定位控制器');title.setStyleSheet('font-size:24px;font-weight:700');root.addWidget(title)
         root.addWidget(QLabel('W 北 / A 西 / S 南 / D 东 · 按住移动，松开停止 · 速度无上限'))
+        self.pad=ControlPad(self.keys);root.addWidget(self.pad)
         self.web=QWebEngineView();self.web.setMinimumHeight(320);root.addWidget(self.web,1)
         self.bridge=Bridge();channel=QWebChannel(self.web.page());channel.registerObject('bridge',self.bridge);self.web.page().setWebChannel(channel)
         self.web.settings().setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls,True)
         self.bridge.selected.connect(self.select_point);self.bridge.loaded.connect(self.map_loaded)
-        self.web.load(QUrl.fromLocalFile(str(Path(__file__).parent/'assets'/'map.html')))
+        assets=Path(__file__).parent/'assets'
+        html=(assets/'map.html').read_text(encoding='utf-8')
+        html=html.replace('<script src="leaflet.js"></script>','<script>'+(assets/'leaflet.js').read_text(encoding='utf-8')+'</script>')
+        html=html.replace('<link rel="stylesheet" href="leaflet.css">','<style>'+(assets/'leaflet.css').read_text(encoding='utf-8')+'</style>')
+        channel_script=QFile(':/qtwebchannel/qwebchannel.js')
+        if not channel_script.open(QIODevice.OpenModeFlag.ReadOnly):
+            raise RuntimeError('Qt WebChannel 资源缺失')
+        channel_js=bytes(channel_script.readAll()).decode('utf-8')
+        html=html.replace('<script src="qrc:///qtwebchannel/qwebchannel.js"></script>','<script>'+channel_js+'</script>')
+        self.web.setHtml(html,QUrl.fromLocalFile(str(assets.resolve())+'/'))
         row=self.row(root);self.map_mode=QComboBox();self.map_mode.addItems(['选择起点 / 跑道中心','绘制路线（第一次点击即首点）']);row.addWidget(self.map_mode)
         self.button(row,'返回默认操场',self.home);self.button(row,'撤销末点',self.undo);self.button(row,'清空路线',self.clear_route)
         self.info=QLabel('默认：北邮沙河操场中心附近 · 所有地图和发送坐标统一为 WGS-84');root.addWidget(self.info)
@@ -54,7 +79,7 @@ class Window(QMainWindow):
         self.position_label=QLabel('尚未发送模拟位置');root.addWidget(self.position_label)
         self.status=QLabel('USB 连接并解锁 iPhone，开启开发者模式。首次连接请在手机点击信任。');self.status.setWordWrap(True);root.addWidget(self.status)
         self.timer=QTimer(self);self.timer.timeout.connect(self.tick);self.timer.start(250)
-        QApplication.instance().installEventFilter(self);self.buttons()
+        QApplication.instance().applicationStateChanged.connect(lambda _:self.keys.clear());self.buttons()
     def row(self,root):
         row=QHBoxLayout();root.addLayout(row);return row
     def button(self,row,text,fn):
@@ -158,7 +183,7 @@ class Window(QMainWindow):
             if self.mode is None:self.point=validate((self.lat.text(),self.lon.text()))
         except ValueError as e:self.status.setText(str(e));return
         self.mode='manual';self.engine=None;self.keys.clear();self.last=time.monotonic();self.last_send=0
-        self.manual_button.setText('暂停 WASD');self.route_button.setText('开始路线跑步');self.speed.clearFocus();self.web.setFocus()
+        self.manual_button.setText('暂停 WASD');self.route_button.setText('开始路线跑步');self.speed.clearFocus();self.pad.setFocus()
     def run_route(self):
         if not self.connected:return
         if self.mode=='route':self.mode='route_paused';self.route_button.setText('继续路线');self.status.setText('路线已暂停，模拟位置保持。');return
@@ -194,15 +219,6 @@ class Window(QMainWindow):
                 self.point=manual_step(self.point,n,e,speed,dt)
                 if n or e or now-self.last_send>=1:self.publish()
         except (ValueError,OverflowError) as e:self.mode=None;self.keys.clear();self.status.setText(str(e))
-    def eventFilter(self,obj,event):
-        if event.type() in (QEvent.Type.ApplicationDeactivate,QEvent.Type.WindowDeactivate):self.keys.clear()
-        if event.type() in (QEvent.Type.KeyPress,QEvent.Type.KeyRelease):
-            key=event.key()
-            if key in (Qt.Key.Key_W,Qt.Key.Key_A,Qt.Key.Key_S,Qt.Key.Key_D):
-                if event.type()==QEvent.Type.KeyRelease:self.keys.discard(key)
-                elif self.mode=='manual' and self.isActiveWindow() and not isinstance(QApplication.focusWidget(),QLineEdit) and not event.modifiers() & (Qt.KeyboardModifier.ControlModifier|Qt.KeyboardModifier.AltModifier):self.keys.add(key);return True
-                if self.mode=='manual' and not isinstance(QApplication.focusWidget(),QLineEdit):return True
-        return super().eventFilter(obj,event)
     def stop(self):
         self.stopping=True;self.mode=None;self.keys.clear();self.status.setText('正在清除模拟位置…');self.send({'action':'stop'})
         self.manual_button.setEnabled(False);self.route_button.setEnabled(False)

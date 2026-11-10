@@ -18,7 +18,22 @@ def main():
         from PySide6.QtWebEngineWidgets import QWebEngineView
         assert Route(track(DEFAULT_CENTER)).total>399
         assert child_command('usbmux','list')
-        print('Bundled imports and motion self-test passed',flush=True)
+        import os,time
+        os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
+        os.environ.setdefault('QTWEBENGINE_CHROMIUM_FLAGS','--disable-gpu')
+        from PySide6.QtWidgets import QApplication
+        from PySide6.QtCore import QCoreApplication,QEvent
+        from iphone_location.app import Window
+        import shiboken6
+        app=QApplication([]);window=Window();window.show()
+        until=time.monotonic()+10
+        while not window.map_ready and time.monotonic()<until:
+            app.processEvents();time.sleep(.01)
+        loaded=window.map_ready
+        window.web.stop();window.close();shiboken6.delete(window)
+        QCoreApplication.sendPostedEvents(None,QEvent.Type.DeferredDelete);app.processEvents()
+        assert loaded,'Bundled Leaflet/WebChannel initialization failed'
+        print('Bundled imports, motion, and map initialization self-test passed',flush=True)
         return 0
     if sys.platform=='win32':
         # Do not hide a terminal belonging to the user or a parent process.

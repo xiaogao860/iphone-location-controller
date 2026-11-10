@@ -5,6 +5,9 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -26,6 +29,8 @@ jobs:
         run: |
           & dist/iPhoneLocationController/iPhoneLocationController.exe --self-test
           if ($LASTEXITCODE -ne 0) { throw 'Bundled self-test failed' }
+          & dist/iPhoneLocationController/iPhoneLocationController.exe --pmd3 mounter --help
+          if ($LASTEXITCODE -ne 0) { throw 'Bundled CLI self-test failed' }
       - name: Package
         shell: pwsh
         run: |
